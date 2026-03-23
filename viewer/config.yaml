@@ -1,0 +1,63 @@
+# CT + Dose + ROI 可视化配置
+# 路径可写绝对路径，也可写相对 viewer 目录的相对路径
+
+ct_nii: "d:/python文件/ct_dose_view/Volume data/201 Extended FOV iDose (3).nii"
+dose_nii: "d:/python文件/ct_dose_view/Volume data/205 Eclipse Doses.nii"
+rs_dcm: "d:/python文件/ct_dose_view/NPC_401/RS.NPC_401.AutoPlan.dcm"
+ct_dicom_dir: "d:/python文件/ct_dose_view/NPC_401"
+rd_dcm: "d:/python文件/ct_dose_view/NPC_401/RD.NPC_401.PlanOpt.dcm"
+output: "d:/python文件/view_ctdose/ct_dose_roi_four_panel.png"
+
+title: Head & Neck Cancer - Dose Distribution (CT+Dose)
+roi_ids: [45, 43, 41, 40, 35, 13, 20, 19, 18, 17, 16]
+
+# 可直接在配置文件中维护ROI定义与显示风格
+roi_map:
+  45: GTV70-4
+  43: GTVln66
+  41: CTV60
+  40: PTV6000
+  35: BrainStem
+  13: SpinalCord
+  20: OpticChiasm
+  19: OpticNrv_L
+  18: OpticNrv_R
+  17: Parotid_L
+  16: Parotid_R
+
+roi_colors:
+  GTV70-4: red
+  GTVln66: magenta
+  CTV60: limegreen
+  PTV6000: cyan
+  BrainStem: yellow
+  SpinalCord: turquoise
+  OpticChiasm: orange
+  OpticNrv_L: blue
+  OpticNrv_R: deepskyblue
+  Parotid_L: purple
+  Parotid_R: brown
+
+roi_linewidths:
+  GTV70-4: 2.8
+  GTVln66: 2.5
+  CTV60: 1.8
+  PTV6000: 1.5
+  BrainStem: 1.8
+  SpinalCord: 1.8
+  OpticChiasm: 1.5
+  OpticNrv_L: 1.5
+  OpticNrv_R: 1.5
+  Parotid_L: 1.8
+  Parotid_R: 1.8
+
+# 可选切片索引，不填则自动取中心
+# z_idx: 120
+# y_idx: 180
+# x_idx: 160
+
+dose_threshold_ratio: 0.1
+scaling_policy: dicom_or_config
+# dose_scale_factor: 0.0001
+
+dpi: 150

@@ -15,15 +15,29 @@ def load_dicomdata(ct_folder: str):
         raise FileNotFoundError(f"未在 {ct_folder} 找到CT DICOM文件")
 
     dsets = [pydicom.dcmread(fp, stop_before_pixels=True) for fp in ct_files]
-    dsets = sorted(dsets, key=lambda ds: float(ds.ImagePositionPatient[2]))
+    ds_ref = dsets[0]
+    ct_orientation = np.array(ds_ref.ImageOrientationPatient, dtype=float)
+    row_dir = ct_orientation[:3] / np.linalg.norm(ct_orientation[:3])
+    col_dir = ct_orientation[3:] / np.linalg.norm(ct_orientation[3:])
+    slice_dir = np.cross(row_dir, col_dir)
+    slice_dir = slice_dir / np.linalg.norm(slice_dir)
+
+    # 斜扫时不能按世界坐标z排序，需沿切片法向方向排序。
+    dsets = sorted(
+        dsets,
+        key=lambda ds: float(np.dot(np.array(ds.ImagePositionPatient, dtype=float), slice_dir)),
+    )
 
     ds0 = dsets[0]
     ct_origin = np.array(ds0.ImagePositionPatient, dtype=float)  # [x, y, z]
-    ct_orientation = np.array(ds0.ImageOrientationPatient, dtype=float)
     spacing_xy = np.array(ds0.PixelSpacing, dtype=float)
 
     if len(dsets) > 1:
-        spacing_z = float(dsets[1].ImagePositionPatient[2] - dsets[0].ImagePositionPatient[2])
+        pos0 = np.array(dsets[0].ImagePositionPatient, dtype=float)
+        pos1 = np.array(dsets[1].ImagePositionPatient, dtype=float)
+        spacing_z = float(abs(np.dot(pos1 - pos0, slice_dir)))
+        if spacing_z <= 1e-6:
+            spacing_z = float(getattr(ds0, "SliceThickness", 1.0))
     else:
         spacing_z = float(getattr(ds0, "SliceThickness", 1.0))
 
@@ -161,16 +175,34 @@ def patient_to_pixel_coords(
     ct_orientation: Optional[np.ndarray]
 ) -> np.ndarray:
     # 把患者坐标（mm）转换为 CT 图像的像素坐标。
-    
+
     relative = patient_coords - ct_origin[np.newaxis, :]
+
+    if ct_orientation is not None and len(ct_orientation) >= 6:
+        row_dir = np.array(ct_orientation[:3], dtype=float)
+        col_dir = np.array(ct_orientation[3:6], dtype=float)
+        row_norm = np.linalg.norm(row_dir)
+        col_norm = np.linalg.norm(col_dir)
+        if row_norm > 0 and col_norm > 0:
+            row_dir = row_dir / row_norm
+            col_dir = col_dir / col_norm
+            slice_dir = np.cross(row_dir, col_dir)
+            slice_norm = np.linalg.norm(slice_dir)
+            if slice_norm > 0:
+                slice_dir = slice_dir / slice_norm
+
+                # DICOM: 行方向对应列索引，列方向对应行索引；最终输出 [z, y, x]
+                x_pix = np.dot(relative, row_dir) / float(ct_spacing[2])
+                y_pix = np.dot(relative, col_dir) / float(ct_spacing[1])
+                z_pix = np.dot(relative, slice_dir) / float(ct_spacing[0])
+                return np.column_stack([z_pix, y_pix, x_pix])
+
+    # 回退路径：方向信息不可用时按轴对齐处理。
     pixel_coords = np.column_stack([
-        relative[:, 0] / ct_spacing[2], 
-        relative[:, 1] / ct_spacing[1], 
-        relative[:, 2] / ct_spacing[0], 
+        relative[:, 2] / ct_spacing[0],
+        relative[:, 1] / ct_spacing[1],
+        relative[:, 0] / ct_spacing[2],
     ])
-    
-    # 转换为数组坐标顺序 [z_pix, y_pix, x_pix]
-    pixel_coords = pixel_coords[:, [2, 1, 0]]
     return pixel_coords
 
 

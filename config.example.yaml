@@ -1,0 +1,124 @@
+# CT + Dose + ROI 可视化配置文件 - 示例模板
+# ========================================
+# 说明：复制本文件为 config.yaml，然后修改下面的路径和参数
+# 路径支持相对路径（相对于viewer目录）或绝对路径
+
+# ========== 必填项：数据文件路径 ==========
+
+# CT图像 - NIfTI格式
+ct_nii: "./data/CT.nii"
+
+# 剂量分布 - NIfTI格式
+dose_nii: "./data/dose.nii"
+
+# DICOM结构集文件 - 包含ROI定义
+rs_dcm: "./data/RS.*.dcm"
+
+# DICOM原始数据目录 - 用于提取ROI参考几何
+ct_dicom_dir: "./data/DICOM"
+
+# DICOM计划剂量文件 - 用于提取DoseGridScaling
+rd_dcm: "./data/RD.*.dcm"
+
+# 输出PNG文件路径
+output: "./output/ct_dose_roi_visualization.png"
+
+
+# ========== 可选项：显示参数 ==========
+
+# 图像标题
+title: "CT + Dose + ROI Visualization"
+
+# 要显示的ROI ID列表（逗号分隔或YAML列表）
+# 如不指定则显示所有可用的ROI
+roi_ids: [1, 2, 3, 4, 5]
+
+# ROI编号到名称的映射（必须与DICOM结构集中的ID一致）
+roi_map:
+  1: "Structure_A"
+  2: "Structure_B"
+  3: "Structure_C"
+  4: "Structure_D"
+  5: "Structure_E"
+
+# ROI显示颜色（支持颜色名称、十六进制代码等）
+# 常用颜色：red, green, blue, yellow, magenta, cyan, orange, purple, brown等
+roi_colors:
+  Structure_A: red
+  Structure_B: green
+  Structure_C: blue
+  Structure_D: yellow
+  Structure_E: magenta
+
+# ROI轮廓线宽（单位：像素）
+roi_linewidths:
+  Structure_A: 2.5
+  Structure_B: 2.0
+  Structure_C: 1.8
+  Structure_D: 1.5
+  Structure_E: 1.5
+
+
+# ========== 高级参数 ==========
+
+# 剂量显示阈值：相对于最大剂量的比例（0.0 ~ 1.0）
+# 例如 0.1 表示只显示 10% ~ 100% 的剂量
+dose_threshold_ratio: 0.1
+
+# 剂量缩放策略
+# "dicom_or_config" - 优先从DICOM提取，失败则使用config配置
+# "raw" - 使用原始剂量值（不缩放）
+# "config" - 使用配置文件中的 dose_scale_factor
+scaling_policy: dicom_or_config
+
+# 剂量缩放因子（仅当 scaling_policy 选择 "config" 时使用）
+# 例如如果原始剂量单位为毫Gy，需要转换为Gy，则设为 0.001
+# dose_scale_factor: 0.0001
+
+
+# ========== 切片位置（可选）==========
+# 如果不指定以下参数，程序会自动选择中心切片
+
+# Z轴切片索引（需要知道图像实际尺寸）
+# z_idx: 120
+
+# Y轴切片索引
+# y_idx: 180
+
+# X轴切片索引
+# x_idx: 160
+
+
+# ========== 输出参数 ==========
+
+# 输出图像分辨率（DPI）- 建议范围 100~300
+# 150: 标准医学报告（推荐）
+# 100: 快速预览，文件较小
+# 300: 高质量打印
+dpi: 150
+
+
+# ========== 说明 ==========
+# 
+# 1. 路径说明：
+#    - 相对路径：相对于 viewer/ 目录，使用 / 分隔符
+#    - 绝对路径：完整路径，例如 "D:/data/CT.nii" (Windows)
+#    - 相对路径示例：./data/CT.nii (同目录下的data文件夹)
+#
+# 2. ROI相关说明：
+#    - ROI ID必须与DICOM结构集中的编号一致
+#    - roi_map、roi_colors、roi_linewidths 的键都必须是ROI名称
+#    - 颜色支持CSS颜色名称、RGB十进制、十六进制等
+#
+# 3. 单位约定：
+#    - 剂量单位：Gray (Gy)
+#    - 空间单位：毫米 (mm)
+#
+# 4. 命令行覆盖：
+#    执行时可用命令行参数覆盖配置文件值，例如：
+#    python main.py --config config.yaml --dpi 300 --output ./output2.png
+#
+# 5. 环境变量：
+#    可设置 DOSE_SCALE_FACTOR 环境变量来覆盖剂量缩放因子
+#    export DOSE_SCALE_FACTOR=0.0001
+#    python main.py --config config.yaml
